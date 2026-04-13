@@ -39,7 +39,7 @@ export default function IntegrationToggle({ label, config, slug }: Props) {
         <button
           onClick={() => toggle.mutate(!enabled)}
           disabled={toggle.isPending}
-          className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors ${
+          className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${
             enabled ? 'bg-indigo-500' : 'bg-gray-200'
           }`}
         >
