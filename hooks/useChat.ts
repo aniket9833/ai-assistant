@@ -11,6 +11,7 @@ export function useChat(slug: string) {
       }).then((r) => r.json()),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['messages', vars.conversationId] });
+      qc.invalidateQueries({ queryKey: ['conversations', slug] });
     },
   });
 }
