@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { SendMessageSchema } from '@/lib/schemas/chat';
 import { sendChat } from '@/lib/services/chatService';
 import {
@@ -6,7 +7,6 @@ import {
   getUserWithProject,
 } from '@/lib/services/projectService';
 import { canSendMessage } from '@/lib/access';
-import { cookies } from 'next/headers';
 
 export async function POST(
   req: NextRequest,
@@ -15,9 +15,12 @@ export async function POST(
   const body = await req.json();
   const parsed = SendMessageSchema.safeParse(body);
   if (!parsed.success)
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
-
-  const userId = (await cookies()).get('userId')?.value;
+    return NextResponse.json(
+      { error: 'Invalid input', issues: parsed.error.issues },
+      { status: 400 },
+    );
+  const cookieStore = await cookies();
+  const userId = cookieStore.get('userId')?.value;
   if (!userId)
     return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
 
@@ -31,10 +34,15 @@ export async function POST(
   if (!canSendMessage(user, project._id.toString()))
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const result = await sendChat(
-    parsed.data.conversationId,
-    project._id.toString(),
-    parsed.data.content,
-  );
-  return NextResponse.json(result);
+  try {
+    const result = await sendChat(
+      parsed.data.conversationId,
+      project._id.toString(),
+      parsed.data.content,
+    );
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
